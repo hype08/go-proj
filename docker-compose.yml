@@ -1,0 +1,15 @@
+version: "3"
+services:
+  db:
+    image: postgres:14.4
+    ports:
+      - 5434:5432
+    volumes:
+      - ./db/docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pg-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=hype
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+volumes:
+  pg-data:
