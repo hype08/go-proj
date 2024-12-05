@@ -10,5 +10,15 @@ services:
       - POSTGRES_DB=hype
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+  backend:
+    build:
+      context: projects/backend
+    ports:
+      - 8080:8080
+    volumes:
+      - ./projects/backend:/backend
+    depends_on:
+      - db
+    tty: true
 volumes:
   pg-data:

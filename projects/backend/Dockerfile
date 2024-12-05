@@ -1,0 +1,11 @@
+FROM golang:1.23.4-bullseye
+
+RUN go install github.com/air-verse/air@latest
+
+ENV APP_HOME /backend
+RUN mkdir -p "$APP_HOME"
+
+WORKDIR "$APP_HOME"
+EXPOSE 8080
+CMD ["air", "run"]
+
