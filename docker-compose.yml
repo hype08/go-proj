@@ -13,6 +13,8 @@ services:
       dockerfile: docker/Dockerfile.dev
     ports:
       - 8080:8080
+    env_file:
+      - projects/backend/env/${ENV}.env
     volumes:
       - ./projects/backend:/backend
     depends_on:
