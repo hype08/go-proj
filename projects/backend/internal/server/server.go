@@ -19,3 +19,12 @@ func NewServer(config *config.ServerConfig) *Server {
 		Config: config,
 	}
 }
+
+func (s *Server) Bootstrap() error {
+	log.Println("Server bootstrapped")
+	return nil
+}
+
+func (s *Server) Run(address string) error {
+	return nil
+}

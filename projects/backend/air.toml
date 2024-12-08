@@ -2,9 +2,9 @@ root = "."
 tmp_dir = ".air"
 
 [build]
-cmd = "go build -o ./.air/main ."
-bin = ".air/main"
-include_ext = ["go", "tpl", "tmpl", "html"]
+cmd = "go build -o ./.air/api ./cmd/api"
+bin = ".air/api"
+include_ext = ["go"]
 exclude_dir = [".air"]
 include_dir = []
 exclude_file = []
@@ -17,4 +17,3 @@ time = true
 
 [misc]
 clean_on_exit = true
-

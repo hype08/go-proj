@@ -3,8 +3,13 @@
 import os
 import typer
 from typing import *
+from enum import Enum
 
 DOCKER_OPTIONS = 'BUILDKIT=1'
+
+
+class Environment(str, Enum):
+  dev = 'dev'
 
 root = os.getcwd()
 app = typer.Typer()
@@ -42,10 +47,10 @@ def docker_execute_sql(params: List[str]):
   docker_execute([command])
 
 
-def docker_execute(command: List[str]):
+def docker_execute(command: List[str], env: Environment = Environment.dev):
   ''' Executes a Docker Compose command. '''
   cmd_str = ' '.join(command)
-  os.system(f'{DOCKER_OPTIONS} docker compose -f {root}/docker-compose.yml {cmd_str}')
+  os.system(f'{DOCKER_OPTIONS} ENV={env.value} docker compose -f {root}/docker-compose.yml {cmd_str}')
 
 
 if __name__ == '__main__':

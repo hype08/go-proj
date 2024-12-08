@@ -28,3 +28,11 @@ func NewServerConfig() (*ServerConfig, error) {
 		databaseUrl,
 	}, nil
 }
+
+func (c *ServerConfig) DatabaseUrl() string {
+	return c.databaseUrl
+}
+
+func (c *ServerConfig) Port() int {
+	return c.port
+}
