@@ -9,6 +9,7 @@ import (
 type ServerConfig struct {
 	port        int
 	databaseUrl string
+	log         *LogConfig
 }
 
 func NewServerConfig() (*ServerConfig, error) {
@@ -23,9 +24,15 @@ func NewServerConfig() (*ServerConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	log, err := NewLogConfig()
+	if err != nil {
+		return nil, err
+	}
 	return &ServerConfig{
 		port,
 		databaseUrl,
+		log,
 	}, nil
 }
 
@@ -35,4 +42,8 @@ func (c *ServerConfig) DatabaseUrl() string {
 
 func (c *ServerConfig) Port() int {
 	return c.port
+}
+
+func (c *ServerConfig) Log() *LogConfig {
+	return c.log
 }

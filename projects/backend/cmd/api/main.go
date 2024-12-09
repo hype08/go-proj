@@ -2,26 +2,27 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/hype08/go-proj/internal/config"
 	"github.com/hype08/go-proj/internal/database"
 	"github.com/hype08/go-proj/internal/server"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
 	config, err := config.NewServerConfig()
 	if err != nil {
-		log.Fatal("Failed to load server config.")
+		log.Fatal().Err(err).Msg("Failed to load config.")
 	}
 
 	server := server.NewServer(config)
 
+	config.Log().Apply()
+
 	db, err := database.NewDatabase(config.DatabaseUrl())
 	if err != nil {
-		log.Fatalf("Failed to connect database. %v\nDatabase URL: %s", err, config.DatabaseUrl())
+		log.Fatal().Err(err).Msg("Failed to connect to database.")
 	}
-	log.Println("Successfully connected to database.")
 
 	txm := database.NewTxManager(db.Pool)
 	log.Printf("Tx manager initialized.: %#v", txm)
@@ -30,6 +31,6 @@ func main() {
 	log.Printf("Starting server on %s", address)
 	err = server.Run(address)
 	if err != nil {
-		log.Fatal("Failed to start server.")
+		log.Fatal().Err(err).Msg("Failed to start server.")
 	}
 }
