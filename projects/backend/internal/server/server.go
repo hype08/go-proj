@@ -2,8 +2,11 @@ package server
 
 import (
 	"log"
+	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/hype08/go-proj/internal/config"
+	"github.com/rs/cors"
 )
 
 type Server struct {
@@ -26,5 +29,11 @@ func (s *Server) Bootstrap() error {
 }
 
 func (s *Server) Run(address string) error {
-	return nil
+	router := mux.NewRouter()
+
+	api := router.PathPrefix("/api").Subrouter()
+	api.HandleFunc("/ping", s.getPing).Methods("GET")
+
+	handler := cors.AllowAll().Handler(router)
+	return http.ListenAndServe(address, handler)
 }
