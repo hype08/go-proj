@@ -7,9 +7,10 @@ import (
 )
 
 type ServerConfig struct {
-	port        int
-	databaseUrl string
-	log         *LogConfig
+	port         int
+	databaseUrl  string
+	log          *LogConfig
+	migrationDir string
 }
 
 func NewServerConfig() (*ServerConfig, error) {
@@ -25,6 +26,12 @@ func NewServerConfig() (*ServerConfig, error) {
 		return nil, err
 	}
 
+	migrationDir := viper.GetString("migration_dir")
+
+	if migrationDir == "" {
+		return nil, errors.New("MIGRATION_DIR was not set.")
+	}
+
 	log, err := NewLogConfig()
 	if err != nil {
 		return nil, err
@@ -33,6 +40,7 @@ func NewServerConfig() (*ServerConfig, error) {
 		port,
 		databaseUrl,
 		log,
+		migrationDir,
 	}, nil
 }
 
@@ -46,4 +54,8 @@ func (c *ServerConfig) Port() int {
 
 func (c *ServerConfig) Log() *LogConfig {
 	return c.log
+}
+
+func (c *ServerConfig) MigrationDir() string {
+	return c.migrationDir
 }

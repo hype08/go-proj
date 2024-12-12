@@ -24,6 +24,8 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to connect to database.")
 	}
 
+	err = database.MigrateUp(db, config.MigrationDir())
+
 	txm := database.NewTxManager(db.Pool)
 	log.Printf("Tx manager initialized.: %#v", txm)
 
