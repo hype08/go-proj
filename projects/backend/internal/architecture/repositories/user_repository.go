@@ -10,10 +10,10 @@ import (
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, user *models.User) error
+	Create(ctx context.Context, params *models.UserCreateParams) (*uuid.UUID, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
-	Update(ctx context.Context, user *models.User) error
+	Update(ctx context.Context, params *models.UserUpdateParams) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -29,8 +29,9 @@ func NewUserRepository(db sqlx.ExtContext) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) Create(ctx context.Context, user *models.User) error {
-	return r.db.QueryRowxContext(ctx, `
+func (r *userRepository) Create(ctx context.Context, params *models.UserCreateParams) (*uuid.UUID, error) {
+	var id uuid.UUID
+	err := r.db.QueryRowxContext(ctx, `
 		INSERT INTO users (
 			id,
 			name,
@@ -41,11 +42,15 @@ func (r *userRepository) Create(ctx context.Context, user *models.User) error {
 		) VALUES (
 			$1, $2, $3, $4, NOW(), NOW()
 		) RETURNING id`,
-		user.ID,
-		user.Name,
-		user.Email,
-		user.Address,
-	).Scan(&user.ID)
+		uuid.New(),
+		params.Name,
+		params.Email,
+		params.Address,
+	).Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+	return &id, nil
 }
 
 func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
@@ -88,21 +93,34 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.
 	return user, nil
 }
 
-func (r *userRepository) Update(ctx context.Context, user *models.User) error {
-	return r.db.QueryRowxContext(ctx, `
+func (r *userRepository) Update(ctx context.Context, params *models.UserUpdateParams) error {
+	query := `
 		UPDATE users 
 		SET 
-			name = $2,
-			email = $3,
-			address = $4,
-			modified_at = NOW()
-		WHERE id = $1
-		RETURNING id`,
-		user.ID,
-		user.Name,
-		user.Email,
-		user.Address,
-	).Scan(&user.ID)
+			modified_at = NOW()`
+
+	args := []interface{}{params.ID}
+	argCount := 1
+
+	if params.Name != nil {
+		argCount++
+		query += `, name = $` + string(argCount)
+		args = append(args, *params.Name)
+	}
+	if params.Email != nil {
+		argCount++
+		query += `, email = $` + string(argCount)
+		args = append(args, *params.Email)
+	}
+	if params.Address != nil {
+		argCount++
+		query += `, address = $` + string(argCount)
+		args = append(args, *params.Address)
+	}
+
+	query += ` WHERE id = $1 RETURNING id`
+
+	return r.db.QueryRowxContext(ctx, query, args...).Scan(&params.ID)
 }
 
 func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
@@ -113,3 +131,4 @@ func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		id,
 	).Scan(&id)
 }
+
