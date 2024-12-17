@@ -25,9 +25,14 @@ func main() {
 	}
 
 	err = database.MigrateUp(db, config.MigrationDir())
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to migrate database.")
+	}
 
 	txm := database.NewTxManager(db.Pool)
 	log.Printf("Tx manager initialized.: %#v", txm)
+
+	// hook up domains
 
 	address := fmt.Sprintf(":%d", config.Port())
 	log.Printf("Starting server on %s", address)
