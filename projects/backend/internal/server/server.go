@@ -1,12 +1,13 @@
 package server
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/hype08/go-proj/internal/config"
+	"github.com/hype08/go-proj/internal/errorh"
 	"github.com/rs/cors"
+	"github.com/rs/zerolog/log"
 )
 
 type Server struct {
@@ -15,7 +16,7 @@ type Server struct {
 
 func NewServer(config *config.ServerConfig) *Server {
 	if config == nil {
-		log.Fatal("Server config nil pointer")
+		log.Fatal().Err(errorh.ErrNilPointer).Send()
 	}
 
 	return &Server{
@@ -24,7 +25,7 @@ func NewServer(config *config.ServerConfig) *Server {
 }
 
 func (s *Server) Bootstrap() error {
-	log.Println("Server bootstrapped")
+	log.Info().Msg("Finished bootstrapping.")
 	return nil
 }
 

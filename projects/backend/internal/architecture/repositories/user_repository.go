@@ -2,11 +2,12 @@ package repositories
 
 import (
 	"context"
-	"log"
 
 	"github.com/google/uuid"
+	"github.com/hype08/go-proj/internal/errorh"
 	"github.com/hype08/go-proj/internal/models"
 	"github.com/jmoiron/sqlx"
+	"github.com/rs/zerolog/log"
 )
 
 type UserRepository interface {
@@ -24,7 +25,7 @@ type userRepository struct {
 
 func NewUserRepository(db sqlx.ExtContext) UserRepository {
 	if db == nil {
-		log.Fatal("Database nil pointer")
+		log.Fatal().Err(errorh.ErrNilPointer).Send()
 	}
 	return &userRepository{db: db}
 }
@@ -131,4 +132,3 @@ func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		id,
 	).Scan(&id)
 }
-
