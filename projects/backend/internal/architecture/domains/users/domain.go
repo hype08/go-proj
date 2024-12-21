@@ -10,11 +10,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type Domain interface {
+	CreateUser(ctx context.Context, params *models.UserCreateParams) (*uuid.UUID, error)
+}
+
 type domain struct {
 	users repositories.UserRepository
 }
-
-type Domain = *domain
 
 func New(
 	users repositories.UserRepository,
