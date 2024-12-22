@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/hype08/go-proj/internal/errorh"
@@ -11,15 +12,14 @@ import (
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, params *models.UserCreateParams) (*uuid.UUID, error)
-	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
-	GetByEmail(ctx context.Context, email string) (*models.User, error)
-	Update(ctx context.Context, params *models.UserUpdateParams) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	CreateUser(ctx context.Context, params *models.UserCreateParams) (*uuid.UUID, error)
+	GetUser(ctx context.Context, id uuid.UUID) (*models.User, error)
+	SearchUsers(ctx context.Context, params *models.UserSearchParams) ([]*models.User, error)
+	UpdateUser(ctx context.Context, params *models.UserUpdateParams) error
+	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
 type userRepository struct {
-	// query and exec with context
 	db sqlx.ExtContext
 }
 
@@ -30,7 +30,7 @@ func NewUserRepository(db sqlx.ExtContext) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) Create(ctx context.Context, params *models.UserCreateParams) (*uuid.UUID, error) {
+func (r *userRepository) CreateUser(ctx context.Context, params *models.UserCreateParams) (*uuid.UUID, error) {
 	var id uuid.UUID
 	err := r.db.QueryRowxContext(ctx, `
 		INSERT INTO users (
@@ -49,12 +49,12 @@ func (r *userRepository) Create(ctx context.Context, params *models.UserCreatePa
 		params.Address,
 	).Scan(&id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 	return &id, nil
 }
 
-func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+func (r *userRepository) GetUser(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	user := &models.User{}
 	err := sqlx.GetContext(ctx, r.db, user, `
 		SELECT 
@@ -69,14 +69,13 @@ func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Use
 		id,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 	return user, nil
 }
 
-func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
-	user := &models.User{}
-	err := sqlx.GetContext(ctx, r.db, user, `
+func (r *userRepository) SearchUsers(ctx context.Context, params *models.UserSearchParams) ([]*models.User, error) {
+	query := `
 		SELECT 
 			id,
 			name,
@@ -84,17 +83,44 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.
 			address,
 			created_at,
 			modified_at
-		FROM users 
-		WHERE email = $1`,
-		email,
-	)
-	if err != nil {
-		return nil, err
+		FROM users
+		WHERE 1=1`
+
+	args := []interface{}{}
+	argCount := 0
+
+	if params.ID != nil {
+		argCount++
+		query += fmt.Sprintf(" AND id = $%d", argCount)
+		args = append(args, params.ID)
 	}
-	return user, nil
+
+	if params.Email != nil {
+		argCount++
+		query += fmt.Sprintf(" AND email = $%d", argCount)
+		args = append(args, params.Email)
+	}
+
+	if params.Text != nil {
+		argCount++
+		query += fmt.Sprintf(" AND (name ILIKE $%d OR address ILIKE $%d)", argCount, argCount)
+		searchPattern := "%" + *params.Text + "%"
+		args = append(args, searchPattern)
+	}
+
+	// Add pagination
+	query += fmt.Sprintf(" LIMIT %d OFFSET %d", params.Count, params.Page*params.Count)
+
+	var users []*models.User
+	err := sqlx.SelectContext(ctx, r.db, &users, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search users: %w", err)
+	}
+
+	return users, nil
 }
 
-func (r *userRepository) Update(ctx context.Context, params *models.UserUpdateParams) error {
+func (r *userRepository) UpdateUser(ctx context.Context, params *models.UserUpdateParams) error {
 	query := `
 		UPDATE users 
 		SET 
@@ -105,30 +131,38 @@ func (r *userRepository) Update(ctx context.Context, params *models.UserUpdatePa
 
 	if params.Name != nil {
 		argCount++
-		query += `, name = $` + string(argCount)
+		query += fmt.Sprintf(", name = $%d", argCount)
 		args = append(args, *params.Name)
 	}
 	if params.Email != nil {
 		argCount++
-		query += `, email = $` + string(argCount)
+		query += fmt.Sprintf(", email = $%d", argCount)
 		args = append(args, *params.Email)
 	}
 	if params.Address != nil {
 		argCount++
-		query += `, address = $` + string(argCount)
+		query += fmt.Sprintf(", address = $%d", argCount)
 		args = append(args, *params.Address)
 	}
 
 	query += ` WHERE id = $1 RETURNING id`
 
-	return r.db.QueryRowxContext(ctx, query, args...).Scan(&params.ID)
+	err := r.db.QueryRowxContext(ctx, query, args...).Scan(&params.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+	return nil
 }
 
-func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.QueryRowxContext(ctx, `
+func (r *userRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
+	err := r.db.QueryRowxContext(ctx, `
 		DELETE FROM users 
 		WHERE id = $1
 		RETURNING id`,
 		id,
 	).Scan(&id)
+	if err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+	return nil
 }

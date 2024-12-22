@@ -7,11 +7,11 @@ import (
 )
 
 type Domains struct {
-	user users.Domain
+	Users users.Domain
 }
 
 func (d *Domains) User() users.Domain {
-	return d.user
+	return d.Users
 }
 
 func NewDomains(
@@ -21,6 +21,6 @@ func NewDomains(
 	userRepository := repositories.NewUserRepository(db.Pool)
 
 	return &Domains{
-		user: users.New(userRepository),
+		Users: users.New(userRepository),
 	}
 }
