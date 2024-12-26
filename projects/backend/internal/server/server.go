@@ -37,4 +37,6 @@ func (s *Server) Run(address string) error {
 
 	handler := cors.AllowAll().Handler(router)
 	return http.ListenAndServe(address, handler)
+
+	// TODO: setup graph handler
 }
